@@ -282,7 +282,7 @@ const getNextQuestion = (criteria: Criterion[], conversationLength: number): str
     return "Is leadership or management experience important for this role?";
   }
   
-  return "Great! Anything else? Or type **done** to generate the filtering prompt.";
+  return "Got it! Add more criteria or verify the generated prompt on the right and run.";
 };
 
 const generatePrompt = (jobTitle: string, criteria: Criterion[]): string => {
@@ -464,6 +464,7 @@ export default function Home() {
   const [expandedCandidate, setExpandedCandidate] = useState<string | null>(null);
   const [configuringJob, setConfiguringJob] = useState<Job | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
 
   const candidateStages = ["Phone Screen", "Onsite", "Offer", "Hired", "Rejected"];
 
@@ -580,6 +581,13 @@ export default function Home() {
 
   const handleQuickSuggestion = (suggestion: string) => {
     setInputText(suggestion);
+    setTimeout(() => {
+      const input = chatInputRef.current;
+      if (input) {
+        input.focus();
+        input.setSelectionRange(suggestion.length, suggestion.length);
+      }
+    }, 0);
   };
 
   const handleRunCandidates = () => {
@@ -1319,80 +1327,84 @@ export default function Home() {
     );
   }
 
-  // Chat View
+  // Chat View - ChatGPT-style interface with sliding prompt panel
   if (view === "chat" && selectedJob) {
+    const showPromptPanel = criteria.length > 0;
+    
     return (
       <div style={{
         height: "100vh",
-        background: "var(--bg-primary)",
+        background: "#0a0a0a",
         display: "flex",
-        flexDirection: "column",
         overflow: "hidden",
       }}>
+        {/* Main Chat Area */}
         <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 400px",
           flex: 1,
+          display: "flex",
+          flexDirection: "column",
           overflow: "hidden",
+          transition: "all 0.3s ease",
         }}>
-          {/* Left Panel - Chat */}
+          {/* Minimal Header */}
           <div style={{
+            padding: "12px 24px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
             display: "flex",
-            flexDirection: "column",
-            borderRight: "1px solid var(--border-subtle)",
-            background: "var(--bg-secondary)",
-            overflow: "hidden",
-            height: "100%",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexShrink: 0,
           }}>
-            {/* Chat Header */}
-            <div style={{
-              padding: "20px 24px",
-              borderBottom: "1px solid var(--border-subtle)",
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              background: "var(--bg-primary)",
-              flexShrink: 0,
-            }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <button
                 onClick={() => setView("jobs")}
                 style={{
-                  background: "var(--bg-glass)",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: "var(--radius-md)",
-                  padding: "10px",
+                  background: "transparent",
+                  border: "none",
+                  padding: "8px",
                   cursor: "pointer",
+                  color: "var(--text-tertiary)",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--text-secondary)",
-                  transition: "var(--transition-fast)",
+                  borderRadius: "6px",
+                  transition: "all 0.15s ease",
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
               >
                 <BackIcon />
               </button>
-              <div>
-                <h2 style={{
-                  fontSize: "16px",
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                }}>
-                  Criteria Builder
-                </h2>
-                <p style={{ fontSize: "13px", color: "var(--text-tertiary)" }}>
-                  {selectedJob.title}
-                </p>
+              <div style={{
+                padding: "6px 12px",
+                background: "rgba(19, 129, 58, 0.15)",
+                borderRadius: "20px",
+                fontSize: "13px",
+                color: "var(--accent-primary)",
+                fontWeight: 500,
+              }}>
+                {selectedJob.title}
               </div>
             </div>
+            <span style={{ fontSize: "13px", color: "var(--text-tertiary)" }}>
+              {selectedJob.candidateCount} candidates
+            </span>
+          </div>
 
-            {/* Messages Area */}
+          {/* Messages Area */}
+          <div style={{
+            flex: 1,
+            overflow: "auto",
+            display: "flex",
+            flexDirection: "column",
+          }}>
             <div style={{
-              flex: 1,
-              overflow: "auto",
-              padding: "24px",
+              maxWidth: "720px",
+              width: "100%",
+              margin: "0 auto",
+              padding: "32px 24px",
               display: "flex",
               flexDirection: "column",
-              gap: "20px",
+              gap: "24px",
             }}>
               {messages.map((message) => (
                 <div
@@ -1400,25 +1412,21 @@ export default function Home() {
                   style={{
                     display: "flex",
                     justifyContent: message.role === "user" ? "flex-end" : "flex-start",
-                    animation: "slideUp 0.3s ease",
+                    animation: "fadeIn 0.3s ease",
                   }}
                 >
                   <div style={{
-                    maxWidth: "75%",
-                    padding: "16px 20px",
+                    maxWidth: "85%",
+                    padding: "14px 18px",
                     borderRadius: message.role === "user" 
-                      ? "var(--radius-lg) var(--radius-lg) 4px var(--radius-lg)" 
-                      : "var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px",
+                      ? "18px 18px 4px 18px" 
+                      : "18px 18px 18px 4px",
                     background: message.role === "user" 
-                      ? "var(--gradient-primary)" 
-                      : "var(--bg-card)",
+                      ? "var(--accent-primary)"
+                      : "rgba(255,255,255,0.05)",
                     color: message.role === "user" ? "white" : "var(--text-primary)",
-                    fontSize: "14px",
-                    lineHeight: 1.7,
-                    border: message.role === "user" ? "none" : "1px solid var(--border-subtle)",
-                    boxShadow: message.role === "user" 
-                      ? "0 4px 20px rgba(19, 129, 58, 0.3)" 
-                      : "var(--shadow-md)",
+                    fontSize: "15px",
+                    lineHeight: 1.6,
                   }}>
                     <span dangerouslySetInnerHTML={{
                       __html: message.content
@@ -1429,224 +1437,267 @@ export default function Home() {
                 </div>
               ))}
 
+              {/* Typing Indicator */}
               {isTyping && (
-                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{ display: "flex", justifyContent: "flex-start", animation: "fadeIn 0.3s ease" }}>
                   <div style={{
-                    padding: "16px 20px",
-                    borderRadius: "var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px",
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border-subtle)",
+                    padding: "14px 18px",
+                    borderRadius: "18px 18px 18px 4px",
+                    background: "rgba(255,255,255,0.05)",
                   }}>
-                    <TypingIndicator />
+                    <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                      <div style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        background: "var(--text-tertiary)",
+                        animation: "bounce 1.4s ease-in-out infinite",
+                      }} />
+                      <div style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        background: "var(--text-tertiary)",
+                        animation: "bounce 1.4s ease-in-out 0.2s infinite",
+                      }} />
+                      <div style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        background: "var(--text-tertiary)",
+                        animation: "bounce 1.4s ease-in-out 0.4s infinite",
+                      }} />
+                    </div>
                   </div>
                 </div>
               )}
 
               <div ref={messagesEndRef} />
             </div>
+          </div>
 
-            {/* Quick Suggestions */}
-            {messages.length === 1 && (
-              <div style={{
-                padding: "0 24px 16px",
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "8px",
-                flexShrink: 0,
-              }}>
-                {quickSuggestions.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => handleQuickSuggestion(suggestion)}
-                    style={{
-                      padding: "8px 16px",
-                      borderRadius: "var(--radius-full)",
-                      background: "var(--bg-glass)",
-                      border: "1px solid var(--border-default)",
-                      fontSize: "13px",
-                      color: "var(--text-secondary)",
-                      cursor: "pointer",
-                      transition: "var(--transition-fast)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "var(--accent-primary)";
-                      e.currentTarget.style.color = "var(--accent-primary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "var(--border-default)";
-                      e.currentTarget.style.color = "var(--text-secondary)";
-                    }}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Input Area */}
+          {/* Quick Suggestions - Card style */}
+          {messages.length === 1 && (
             <div style={{
-              padding: "20px 24px",
-              borderTop: "1px solid var(--border-subtle)",
-              background: "var(--bg-primary)",
-              display: "flex",
+              maxWidth: "720px",
+              width: "100%",
+              margin: "0 auto",
+              padding: "0 24px 16px",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
               gap: "12px",
               flexShrink: 0,
             }}>
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                placeholder="Describe your ideal candidate..."
-                style={{
-                  ...inputStyle,
-                  flex: 1,
-                }}
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputText.trim() || isTyping}
-                style={{
-                  ...primaryButtonStyle,
-                  padding: "14px 18px",
-                  opacity: !inputText.trim() || isTyping ? 0.5 : 1,
-                  cursor: !inputText.trim() || isTyping ? "not-allowed" : "pointer",
-                }}
-              >
-                <SendIcon />
-              </button>
-        </div>
-          </div>
+              {quickSuggestions.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => handleQuickSuggestion(suggestion)}
+                  style={{
+                    padding: "14px",
+                    borderRadius: "12px",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    fontSize: "14px",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                  }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Right Panel - Prompt Preview */}
+          {/* Input Area */}
           <div style={{
-            display: "flex",
-            flexDirection: "column",
-            background: "var(--bg-primary)",
-            overflow: "hidden",
+            padding: "16px 24px 24px",
+            flexShrink: 0,
           }}>
-            {/* Job Info */}
             <div style={{
-              padding: "24px",
-              borderBottom: "1px solid var(--border-subtle)",
-              flexShrink: 0,
+              maxWidth: "720px",
+              margin: "0 auto",
             }}>
               <div style={{
-                ...glassCardStyle,
-                padding: "20px",
+                display: "flex",
+                alignItems: "flex-end",
+                background: "rgba(255,255,255,0.05)",
+                borderRadius: "16px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                padding: "4px",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                  <div style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "var(--radius-sm)",
-                    background: "var(--gradient-primary)",
+                <input
+                  ref={chatInputRef}
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Describe your ideal candidate..."
+                  style={{
+                    flex: 1,
+                    padding: "14px 16px",
+                    background: "transparent",
+                    border: "none",
+                    fontSize: "15px",
+                    color: "var(--text-primary)",
+                    outline: "none",
+                  }}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputText.trim() || isTyping}
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "12px",
+                    background: inputText.trim() && !isTyping ? "var(--accent-primary)" : "transparent",
+                    border: "none",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "white",
-                  }}>
-                    <BriefcaseIcon />
-                  </div>
-                  <div>
-                    <h3 style={{
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      color: "var(--text-primary)",
-                    }}>
-                      {selectedJob.title}
-                    </h3>
-                    <p style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>
-                      {selectedJob.location} • {selectedJob.reqId}
-                    </p>
-                  </div>
-                </div>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px 14px",
-                  background: "var(--bg-glass)",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--border-subtle)",
-                }}>
-                  <UsersIcon />
-                  <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-                    <strong style={{ color: "var(--text-primary)" }}>{selectedJob.candidateCount}</strong> candidates to filter
-                  </span>
-                </div>
+                    cursor: !inputText.trim() || isTyping ? "default" : "pointer",
+                    color: inputText.trim() && !isTyping ? "white" : "var(--text-muted)",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Prompt Section */}
-            <div style={{ flex: 1, overflow: "auto", padding: "24px", display: "flex", flexDirection: "column" }}>
-
-              {/* Prompt Preview */}
+        {/* Right Panel - Slides in when criteria exist */}
+        <div style={{
+          width: showPromptPanel ? "380px" : "0px",
+          borderLeft: showPromptPanel ? "1px solid rgba(255,255,255,0.06)" : "none",
+          background: "#111",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          transition: "all 0.3s ease",
+        }}>
+          {showPromptPanel && (
+            <>
+              {/* Panel Header */}
               <div style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: "8px",
+                flexShrink: 0,
               }}>
-                <h3 style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                }}>
+                <h3 style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                   Generated Prompt
                 </h3>
-                <span style={{
-                  fontSize: "11px",
-                  color: "var(--text-tertiary)",
-                }}>
+                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
                   Editable
                 </span>
               </div>
 
-              <textarea
-                value={generatedPrompt || generatePrompt(selectedJob.title, criteria)}
-                onChange={(e) => setGeneratedPrompt(e.target.value)}
-                placeholder="Your filtering prompt will appear here..."
-                style={{
-                  flex: 1,
-                  width: "100%",
-                  minHeight: "240px",
-                  padding: "16px",
-                  borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border-default)",
-                  background: "var(--bg-card)",
-                  fontSize: "12px",
-                  fontFamily: "var(--font-mono)",
-                  lineHeight: 1.7,
-                  resize: "none",
-                  color: criteria.length === 0 ? "var(--text-muted)" : "var(--text-primary)",
-                }}
-              />
+              {/* Criteria Tags */}
+              {/* <div style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                flexShrink: 0,
+              }}>
+                <div style={{ fontSize: "12px", color: "var(--text-tertiary)", marginBottom: "10px" }}>
+                  Criteria ({criteria.length})
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {criteria.map((c) => (
+                    <span
+                      key={c.id}
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: "6px",
+                        background: "rgba(19, 129, 58, 0.15)",
+                        fontSize: "12px",
+                        color: "var(--accent-primary)",
+                      }}
+                    >
+                      {c.value}
+                    </span>
+                  ))}
+                </div>
+              </div> */}
 
-              <button
-                onClick={handleRunCandidates}
-                disabled={isRunning || criteria.length === 0}
-                style={{
-                  ...primaryButtonStyle,
-                  width: "100%",
-                  marginTop: "16px",
-                  opacity: criteria.length === 0 ? 0.5 : 1,
-                  cursor: criteria.length === 0 ? "not-allowed" : "pointer",
-                }}
-              >
-                {isRunning ? <Spinner size={20} /> : null}
-                {isRunning ? "Analyzing..." : `Run on ${selectedJob.candidateCount} candidates`}
-              </button>
-            </div>
-          </div>
+              {/* Prompt Textarea */}
+              <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
+                <textarea
+                  value={generatedPrompt || generatePrompt(selectedJob.title, criteria)}
+                  onChange={(e) => setGeneratedPrompt(e.target.value)}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    minHeight: "200px",
+                    padding: "14px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.03)",
+                    fontSize: "13px",
+                    fontFamily: "var(--font-mono)",
+                    lineHeight: 1.6,
+                    resize: "none",
+                    color: "var(--text-primary)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              {/* Run Button */}
+              <div style={{
+                padding: "16px 20px",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+                flexShrink: 0,
+              }}>
+                <button
+                  onClick={handleRunCandidates}
+                  disabled={isRunning}
+                  style={{
+                    width: "100%",
+                    padding: "14px",
+                    borderRadius: "10px",
+                    background: "var(--accent-primary)",
+                    border: "none",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "white",
+                    cursor: isRunning ? "wait" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {isRunning ? <Spinner size={16} /> : null}
+                  {isRunning ? "Analyzing..." : `Run on ${selectedJob.candidateCount} candidates`}
+                </button>
+              </div>
+            </>
+          )}
         </div>
-    </div>
-  );
+      </div>
+    );
   }
 
   // Results View - Dedicated full page for results
