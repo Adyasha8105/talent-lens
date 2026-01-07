@@ -37,11 +37,12 @@ interface Candidate {
   stage: string;
   location: string;
   experience: string;
-  skills: string;
+  skills: string[];
   leadership: string;
   background: string;
   score: number;
   reason: string;
+  email?: string;
 }
 
 // Mock Data
@@ -104,11 +105,12 @@ const mockCandidates: Candidate[] = [
     stage: "Onsite",
     location: "San Francisco, CA",
     experience: "8 years",
-    skills: "Python, Go, Kubernetes",
+    skills: ["Python", "Go", "Kubernetes", "System Design"],
     leadership: "Led team of 12",
     background: "Ex-Google, Stanford CS",
     score: 95,
     reason: "Exceptional match with strong technical skills, leadership experience at FAANG companies, and local to SF.",
+    email: "sarah.chen@email.com",
   },
   {
     id: "2",
@@ -117,11 +119,12 @@ const mockCandidates: Candidate[] = [
     stage: "Hired",
     location: "San Francisco, CA",
     experience: "6 years",
-    skills: "Python, Java, AWS",
+    skills: ["Python", "Java", "AWS", "Microservices"],
     leadership: "Tech lead for 8",
     background: "Ex-Amazon, Berkeley",
     score: 92,
     reason: "Strong technical background with payment systems expertise and proven leadership abilities.",
+    email: "marcus.j@email.com",
   },
   {
     id: "3",
@@ -130,11 +133,12 @@ const mockCandidates: Candidate[] = [
     stage: "Phone Screen",
     location: "Remote (Austin)",
     experience: "7 years",
-    skills: "Python, Rust, Docker",
+    skills: ["Python", "Rust", "Docker", "PostgreSQL"],
     leadership: "Managed 5 engineers",
     background: "Ex-Uber, MIT",
     score: 87,
     reason: "Solid experience but remote location may require adjustment. Strong technical skills.",
+    email: "emily.r@email.com",
   },
   {
     id: "4",
@@ -143,11 +147,12 @@ const mockCandidates: Candidate[] = [
     stage: "Offer",
     location: "Seattle, WA",
     experience: "5 years",
-    skills: "Python, C#, Azure",
+    skills: ["Python", "C#", "Azure", "TypeScript"],
     leadership: "Mentored 3 juniors",
     background: "Microsoft, UW",
     score: 78,
     reason: "Good skills but limited leadership experience. Would need relocation.",
+    email: "david.kim@email.com",
   },
   {
     id: "5",
@@ -156,11 +161,12 @@ const mockCandidates: Candidate[] = [
     stage: "Phone Screen",
     location: "New York, NY",
     experience: "4 years",
-    skills: "Python, JavaScript, React",
+    skills: ["Python", "JavaScript", "React", "Web3"],
     leadership: "Individual contributor",
     background: "Coinbase, NYU",
     score: 65,
     reason: "Developing skills but lacks senior-level experience and leadership background.",
+    email: "jessica.p@email.com",
   },
   {
     id: "6",
@@ -169,11 +175,12 @@ const mockCandidates: Candidate[] = [
     stage: "Rejected",
     location: "Chicago, IL",
     experience: "2 years",
-    skills: "Python, SQL",
+    skills: ["Python", "SQL", "Django"],
     leadership: "None",
     background: "Bootcamp grad",
     score: 42,
     reason: "Insufficient experience for senior role. Would be better suited for mid-level position.",
+    email: "alex.t@email.com",
   },
 ];
 
@@ -468,6 +475,17 @@ export default function Home() {
   const [viewingResume, setViewingResume] = useState<Candidate | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcut to close sample results drawer (Escape key)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && sampleResults) {
+        setSampleResults(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [sampleResults]);
 
   const candidateStages = ["Phone Screen", "Onsite", "Offer", "Hired", "Rejected"];
 
@@ -950,8 +968,8 @@ export default function Home() {
               </h1>
               <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
                 Configure sync settings and filter candidates
-              </p>
-            </div>
+          </p>
+        </div>
 
             {/* Search & Filter */}
             <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
@@ -1241,7 +1259,7 @@ export default function Home() {
                         <span style={{ fontSize: "14px", color: "var(--text-primary)" }}>{stage}</span>
                       </label>
                     ))}
-                  </div>
+        </div>
                   <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "12px" }}>
                     Only candidates in the selected stages will be synced and available for filtering.
                   </p>
@@ -1338,8 +1356,8 @@ export default function Home() {
             </button>
           </div>
         )}
-      </div>
-    );
+    </div>
+  );
   }
 
   // Chat View - ChatGPT-style interface with sliding prompt panel
@@ -1347,6 +1365,7 @@ export default function Home() {
     const showPromptPanel = criteria.length > 0;
     
     return (
+      <>
       <div style={{
         height: "100vh",
         background: "#0a0a0a",
@@ -1655,85 +1674,30 @@ export default function Home() {
                 </div>
               </div> */}
 
-              {/* Prompt Textarea or Sample Results */}
+              {/* Prompt Textarea */}
               <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
-                {sampleResults ? (
-                  // Sample Results Preview
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        Sample Results (5)
-                      </span>
-                      <button
-                        onClick={() => setSampleResults(null)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          fontSize: "12px",
-                          color: "var(--text-tertiary)",
-                          cursor: "pointer",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        Edit prompt
-                      </button>
-                    </div>
-                    {sampleResults.map((candidate, i) => (
-                      <div
-                        key={candidate.id}
-                        style={{
-                          padding: "12px 14px",
-                          background: "rgba(255,255,255,0.03)",
-                          borderRadius: "8px",
-                          border: "1px solid rgba(255,255,255,0.06)",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                          <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>
-                            {i + 1}. {candidate.name}
-                          </span>
-                          <span style={{
-                            padding: "3px 8px",
-                            borderRadius: "12px",
-                            fontSize: "11px",
-                            fontWeight: 500,
-                            background: candidate.score >= 90 ? "rgba(34, 197, 94, 0.15)" : candidate.score >= 75 ? "rgba(19, 129, 58, 0.15)" : candidate.score >= 60 ? "rgba(234, 179, 8, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                            color: getScoreColor(candidate.score),
-                          }}>
-                            {candidate.score >= 90 ? "Strong" : candidate.score >= 75 ? "Good" : candidate.score >= 60 ? "Moderate" : "Review"}
-                          </span>
-                        </div>
-                        <p style={{ fontSize: "12px", color: "var(--text-tertiary)", lineHeight: 1.5 }}>
-                          {candidate.reason.substring(0, 80)}...
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  // Prompt Textarea
-                  <textarea
-                    value={generatedPrompt || generatePrompt(selectedJob.title, criteria)}
-                    onChange={(e) => {
-                      setGeneratedPrompt(e.target.value);
-                      setSampleResults(null); // Reset sample when prompt is edited
-                    }}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      minHeight: "200px",
-                      padding: "14px",
-                      borderRadius: "10px",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      background: "rgba(255,255,255,0.03)",
-                      fontSize: "13px",
-                      fontFamily: "var(--font-mono)",
-                      lineHeight: 1.6,
-                      resize: "none",
-                      color: "var(--text-primary)",
-                      outline: "none",
-                    }}
-                  />
-                )}
+                <textarea
+                  value={generatedPrompt || generatePrompt(selectedJob.title, criteria)}
+                  onChange={(e) => {
+                    setGeneratedPrompt(e.target.value);
+                    setSampleResults(null);
+                  }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    minHeight: "200px",
+                    padding: "14px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.03)",
+                    fontSize: "13px",
+                    fontFamily: "var(--font-mono)",
+                    lineHeight: 1.6,
+                    resize: "none",
+                    color: "var(--text-primary)",
+                    outline: "none",
+                  }}
+                />
               </div>
 
               {/* Action Buttons */}
@@ -1745,47 +1709,43 @@ export default function Home() {
                 flexDirection: "column",
                 gap: "10px",
               }}>
-                {!sampleResults ? (
-                  // Test Sample Button
-                  <button
-                    onClick={handleTestSample}
-                    disabled={isTesting}
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      borderRadius: "10px",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      color: "var(--text-primary)",
-                      cursor: isTesting ? "wait" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    {isTesting ? <Spinner size={14} /> : null}
-                    {isTesting ? "Testing..." : "Test on 5 candidates"}
-                  </button>
-                ) : null}
-                
-                {/* Run All Button */}
                 <button
-                  onClick={handleRunCandidates}
-                  disabled={isRunning}
+                  onClick={handleTestSample}
+                  disabled={isTesting}
                   style={{
                     width: "100%",
                     padding: "12px",
                     borderRadius: "10px",
-                    background: sampleResults ? "var(--accent-primary)" : "rgba(255,255,255,0.08)",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "var(--text-primary)",
+                    cursor: isTesting ? "wait" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {isTesting ? <Spinner size={14} /> : null}
+                  {isTesting ? "Testing..." : "Test on 5 candidates"}
+                </button>
+                
+                <button
+                  onClick={handleRunCandidates}
+                  disabled={isRunning || !sampleResults}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    borderRadius: "10px",
+                    background: sampleResults ? "var(--accent-primary)" : "rgba(255,255,255,0.03)",
                     border: "none",
                     fontSize: "14px",
                     fontWeight: 500,
-                    color: sampleResults ? "white" : "var(--text-secondary)",
-                    cursor: isRunning ? "wait" : "pointer",
+                    color: sampleResults ? "white" : "var(--text-muted)",
+                    cursor: isRunning || !sampleResults ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1801,6 +1761,340 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Bottom Drawer - Sample Results Preview */}
+      {sampleResults && (
+        <div style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "#111",
+          borderTop: "1px solid rgba(255,255,255,0.1)",
+          borderTopLeftRadius: "16px",
+          borderTopRightRadius: "16px",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.5)",
+          animation: "slideUp 0.3s ease",
+          zIndex: 100,
+          maxHeight: "60vh",
+          display: "flex",
+          flexDirection: "column",
+        }}>
+          {/* Drawer Header with Close */}
+          <div style={{
+            padding: "16px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button
+                onClick={() => setSampleResults(null)}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--text-secondary)",
+                }}
+                title="Close & Edit Prompt"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <h3 style={{ fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>
+                Sample Results
+              </h3>
+              <span style={{
+                padding: "4px 10px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: 500,
+                background: "rgba(34, 197, 94, 0.15)",
+                color: "#22c55e",
+              }}>
+                {sampleResults.length} candidates
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <span style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                Press <kbd style={{ padding: "2px 6px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", fontSize: "11px" }}>Esc</kbd> to close
+              </span>
+              <button
+                onClick={() => setSampleResults(null)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "none",
+                  fontSize: "13px",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                }}
+              >
+                Edit Prompt
+              </button>
+              <button
+                onClick={handleRunCandidates}
+                disabled={isRunning}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: "8px",
+                  background: "var(--accent-primary)",
+                  border: "none",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "white",
+                  cursor: isRunning ? "wait" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                {isRunning ? <Spinner size={14} /> : null}
+                Run on all {selectedJob.candidateCount}
+              </button>
+            </div>
+          </div>
+
+          {/* Sample Results Table */}
+          <div style={{ flex: 1, overflow: "auto", padding: "0 24px 16px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "11px", fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.5px", width: "180px" }}>Candidate</th>
+                  <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "11px", fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.5px", width: "80px" }}>Fit</th>
+                  <th style={{ textAlign: "left", padding: "12px 16px", fontSize: "11px", fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reasoning</th>
+                  <th style={{ textAlign: "center", padding: "12px 16px", fontSize: "11px", fontWeight: 600, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.5px", width: "80px" }}>Resume</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sampleResults.map((candidate) => (
+                  <tr key={candidate.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
+                      <div style={{ fontWeight: 500, color: "var(--text-primary)", fontSize: "14px" }}>{candidate.name}</div>
+                      <div style={{ fontSize: "12px", color: "var(--text-tertiary)", marginTop: "2px" }}>{candidate.currentRole}</div>
+                    </td>
+                    <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
+                      <span style={{
+                        padding: "4px 10px",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                        fontWeight: 500,
+                        background: candidate.score >= 90 ? "rgba(34, 197, 94, 0.15)" : candidate.score >= 75 ? "rgba(19, 129, 58, 0.15)" : candidate.score >= 60 ? "rgba(234, 179, 8, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                        color: getScoreColor(candidate.score),
+                      }}>
+                        {candidate.score >= 90 ? "Strong" : candidate.score >= 75 ? "Good" : candidate.score >= 60 ? "Moderate" : "Review"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
+                      <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
+                        {candidate.reason}
+                      </p>
+                    </td>
+                    <td style={{ padding: "14px 16px", textAlign: "center", verticalAlign: "top" }}>
+                      <button
+                        onClick={() => setViewingResume(candidate)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          background: "rgba(139, 92, 246, 0.15)",
+                          border: "none",
+                          fontSize: "12px",
+                          color: "#8b5cf6",
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Resume Modal */}
+      {viewingResume && (
+        <div 
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+            animation: "fadeIn 0.2s ease",
+          }}
+          onClick={() => setViewingResume(null)}
+        >
+          <div 
+            style={{
+              width: "90%",
+              maxWidth: "800px",
+              maxHeight: "85vh",
+              background: "#1a1a1a",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.1)",
+              display: "flex",
+              flexDirection: "column",
+              animation: "scaleIn 0.2s ease",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: "20px 24px",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+              <div>
+                <h3 style={{ fontSize: "18px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+                  {viewingResume.name}
+                </h3>
+                <p style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+                  {viewingResume.currentRole} • {viewingResume.experience}
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingResume(null)}
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "8px",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* AI Assessment Banner */}
+            <div style={{
+              padding: "16px 24px",
+              background: viewingResume.score >= 75 ? "rgba(34, 197, 94, 0.08)" : "rgba(234, 179, 8, 0.08)",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+                <span style={{
+                  padding: "4px 10px",
+                  borderRadius: "12px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  background: viewingResume.score >= 90 ? "rgba(34, 197, 94, 0.2)" : viewingResume.score >= 75 ? "rgba(19, 129, 58, 0.2)" : viewingResume.score >= 60 ? "rgba(234, 179, 8, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                  color: getScoreColor(viewingResume.score),
+                }}>
+                  {viewingResume.score >= 90 ? "Strong Fit" : viewingResume.score >= 75 ? "Good Fit" : viewingResume.score >= 60 ? "Moderate Fit" : "Needs Review"}
+                </span>
+                <span style={{ fontSize: "13px", color: "var(--text-tertiary)" }}>AI Assessment</span>
+              </div>
+              <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
+                {viewingResume.reason}
+              </p>
+            </div>
+
+            {/* Resume Content */}
+            <div style={{ flex: 1, overflow: "auto", padding: "24px" }}>
+              <div style={{ 
+                background: "white", 
+                borderRadius: "8px", 
+                padding: "32px",
+                color: "#1a1a1a",
+                fontSize: "14px",
+                lineHeight: 1.7,
+              }}>
+                <h2 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "4px", color: "#111" }}>
+                  {viewingResume.name}
+                </h2>
+                <p style={{ color: "#666", marginBottom: "20px" }}>
+                  {viewingResume.currentRole} • {viewingResume.location || "San Francisco, CA"} • {viewingResume.email || "candidate@email.com"}
+                </p>
+                
+                <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "20px 0" }} />
+                
+                <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginBottom: "12px" }}>
+                  Summary
+                </h3>
+                <p style={{ color: "#444", marginBottom: "24px" }}>
+                  Experienced {viewingResume.currentRole.toLowerCase()} with {viewingResume.experience?.toLowerCase() || "several years"} of experience building scalable applications.
+                  Proficient in {viewingResume.skills?.slice(0, 3).join(", ") || "modern technologies"} with a track record of delivering high-impact projects.
+                </p>
+
+                <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginBottom: "12px" }}>
+                  Experience
+                </h3>
+                <div style={{ marginBottom: "20px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <strong style={{ color: "#222" }}>{viewingResume.currentRole}</strong>
+                    <span style={{ color: "#888", fontSize: "13px" }}>2021 - Present</span>
+                  </div>
+                  <p style={{ color: "#666", fontSize: "13px", marginBottom: "8px" }}>Tech Company Inc.</p>
+                  <ul style={{ margin: 0, paddingLeft: "20px", color: "#444" }}>
+                    <li>Led development of core product features used by millions of users</li>
+                    <li>Mentored junior engineers and conducted code reviews</li>
+                    <li>Improved system performance by 40% through optimization</li>
+                  </ul>
+                </div>
+
+                <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginBottom: "12px" }}>
+                  Skills
+                </h3>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {(viewingResume.skills || ["JavaScript", "React", "Node.js", "Python"]).map((skill: string) => (
+                    <span key={skill} style={{
+                      padding: "4px 12px",
+                      background: "#f0f0f0",
+                      borderRadius: "4px",
+                      fontSize: "13px",
+                      color: "#444",
+                    }}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+
+                <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginTop: "24px", marginBottom: "12px" }}>
+                  Education
+                </h3>
+                <div>
+                  <strong style={{ color: "#222" }}>Bachelor of Science in Computer Science</strong>
+                  <p style={{ color: "#666", fontSize: "13px", margin: "4px 0 0" }}>University • 2017</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+      </>
     );
   }
 
@@ -2050,7 +2344,7 @@ export default function Home() {
                 <thead>
                   <tr style={{ background: "var(--bg-tertiary)" }}>
                     <th style={{ padding: "14px 16px", width: "40px" }}></th>
-                    {["#", "Name", "Role", "Stage", "Location", "Exp", "Fit"].map((col) => (
+                    {["#", "Name", "Role", "Stage", "Location", "Exp", "Fit", "Resume"].map((col) => (
                       <th
                         key={col}
                         style={{
@@ -2135,7 +2429,7 @@ export default function Home() {
                             <td style={{ padding: "14px 16px", color: "var(--text-secondary)" }}>
                               {candidate.experience}
                             </td>
-                            <td style={{ padding: "14px 16px", textAlign: "right" }}>
+                            <td style={{ padding: "14px 16px" }}>
                               <span style={{
                                 padding: "5px 12px",
                                 borderRadius: "var(--radius-full)",
@@ -2147,10 +2441,39 @@ export default function Home() {
                                 {candidate.score >= 90 ? "Strong" : candidate.score >= 75 ? "Good" : candidate.score >= 60 ? "Moderate" : "Review"}
                               </span>
                             </td>
+                            <td style={{ padding: "14px 16px" }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setViewingResume(candidate);
+                                }}
+                                style={{
+                                  padding: "6px 12px",
+                                  borderRadius: "6px",
+                                  background: "rgba(139, 92, 246, 0.15)",
+                                  border: "none",
+                                  fontSize: "12px",
+                                  color: "#8b5cf6",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                }}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                  <polyline points="14 2 14 8 20 8"></polyline>
+                                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                                  <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                View
+                              </button>
+                            </td>
                           </tr>
                           {isExpanded && (
                             <tr key={`${candidate.id}-expanded`}>
-                              <td colSpan={8} style={{
+                              <td colSpan={9} style={{
                                 padding: "0 16px 20px 56px",
                                 background: "var(--bg-glass)",
                                 borderBottom: "1px solid var(--border-subtle)",
@@ -2191,6 +2514,170 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Resume Modal */}
+        {viewingResume && (
+          <div 
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.8)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 200,
+              animation: "fadeIn 0.2s ease",
+            }}
+            onClick={() => setViewingResume(null)}
+          >
+            <div 
+              style={{
+                width: "90%",
+                maxWidth: "800px",
+                maxHeight: "85vh",
+                background: "#1a1a1a",
+                borderRadius: "16px",
+                border: "1px solid rgba(255,255,255,0.1)",
+                display: "flex",
+                flexDirection: "column",
+                animation: "scaleIn 0.2s ease",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}>
+                <div>
+                  <h3 style={{ fontSize: "18px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+                    {viewingResume.name}
+                  </h3>
+                  <p style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+                    {viewingResume.currentRole} • {viewingResume.experience}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setViewingResume(null)}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "8px",
+                    background: "rgba(255,255,255,0.08)",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              {/* AI Assessment Banner */}
+              <div style={{
+                padding: "16px 24px",
+                background: viewingResume.score >= 75 ? "rgba(34, 197, 94, 0.08)" : "rgba(234, 179, 8, 0.08)",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+                  <span style={{
+                    padding: "4px 10px",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    background: viewingResume.score >= 90 ? "rgba(34, 197, 94, 0.2)" : viewingResume.score >= 75 ? "rgba(19, 129, 58, 0.2)" : viewingResume.score >= 60 ? "rgba(234, 179, 8, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                    color: getScoreColor(viewingResume.score),
+                  }}>
+                    {viewingResume.score >= 90 ? "Strong Fit" : viewingResume.score >= 75 ? "Good Fit" : viewingResume.score >= 60 ? "Moderate Fit" : "Needs Review"}
+                  </span>
+                  <span style={{ fontSize: "13px", color: "var(--text-tertiary)" }}>AI Assessment</span>
+                </div>
+                <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
+                  {viewingResume.reason}
+                </p>
+              </div>
+
+              {/* Resume Content */}
+              <div style={{ flex: 1, overflow: "auto", padding: "24px" }}>
+                <div style={{ 
+                  background: "white", 
+                  borderRadius: "8px", 
+                  padding: "32px",
+                  color: "#1a1a1a",
+                  fontSize: "14px",
+                  lineHeight: 1.7,
+                }}>
+                  <h2 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "4px", color: "#111" }}>
+                    {viewingResume.name}
+                  </h2>
+                  <p style={{ color: "#666", marginBottom: "20px" }}>
+                    {viewingResume.currentRole} • {viewingResume.location || "San Francisco, CA"} • {viewingResume.email || "candidate@email.com"}
+                  </p>
+                  
+                  <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "20px 0" }} />
+                  
+                  <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginBottom: "12px" }}>
+                    Summary
+                  </h3>
+                  <p style={{ color: "#444", marginBottom: "24px" }}>
+                    Experienced {viewingResume.currentRole.toLowerCase()} with {viewingResume.experience?.toLowerCase() || "several years"} of experience building scalable applications.
+                    Proficient in {viewingResume.skills?.slice(0, 3).join(", ") || "modern technologies"} with a track record of delivering high-impact projects.
+                  </p>
+
+                  <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginBottom: "12px" }}>
+                    Experience
+                  </h3>
+                  <div style={{ marginBottom: "20px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <strong style={{ color: "#222" }}>{viewingResume.currentRole}</strong>
+                      <span style={{ color: "#888", fontSize: "13px" }}>2021 - Present</span>
+                    </div>
+                    <p style={{ color: "#666", fontSize: "13px", marginBottom: "8px" }}>Tech Company Inc.</p>
+                    <ul style={{ margin: 0, paddingLeft: "20px", color: "#444" }}>
+                      <li>Led development of core product features used by millions of users</li>
+                      <li>Mentored junior engineers and conducted code reviews</li>
+                      <li>Improved system performance by 40% through optimization</li>
+                    </ul>
+                  </div>
+
+                  <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginBottom: "12px" }}>
+                    Skills
+                  </h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {(viewingResume.skills || ["JavaScript", "React", "Node.js", "Python"]).map((skill: string) => (
+                      <span key={skill} style={{
+                        padding: "4px 12px",
+                        background: "#f0f0f0",
+                        borderRadius: "4px",
+                        fontSize: "13px",
+                        color: "#444",
+                      }}>
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+
+                  <h3 style={{ fontSize: "14px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", color: "#333", marginTop: "24px", marginBottom: "12px" }}>
+                    Education
+                  </h3>
+                  <div>
+                    <strong style={{ color: "#222" }}>Bachelor of Science in Computer Science</strong>
+                    <p style={{ color: "#666", fontSize: "13px", margin: "4px 0 0" }}>University • 2017</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
