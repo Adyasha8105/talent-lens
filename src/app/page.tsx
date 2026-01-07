@@ -463,6 +463,9 @@ export default function Home() {
   const [scoreFilter, setScoreFilter] = useState<"all" | "excellent" | "strong" | "potential" | "weak">("all");
   const [expandedCandidate, setExpandedCandidate] = useState<string | null>(null);
   const [configuringJob, setConfiguringJob] = useState<Job | null>(null);
+  const [sampleResults, setSampleResults] = useState<Candidate[] | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [viewingResume, setViewingResume] = useState<Candidate | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
 
@@ -563,6 +566,7 @@ export default function Home() {
 
         if (newCriteria.length > 0) {
           setCriteria(prev => [...prev, ...newCriteria]);
+          setSampleResults(null); // Reset sample when criteria change
           assistantContent = `Added: ${newCriteria.map(c => `**${c.value}**`).join(", ")}\n\n${getNextQuestion([...criteria, ...newCriteria], messages.length)}`;
         } else {
           assistantContent = getNextQuestion(criteria, messages.length);
@@ -590,10 +594,21 @@ export default function Home() {
     }, 0);
   };
 
+  const handleTestSample = () => {
+    setIsTesting(true);
+    setTimeout(() => {
+      // Get first 5 candidates as sample
+      const sample = [...mockCandidates].sort((a, b) => b.score - a.score).slice(0, 5);
+      setSampleResults(sample);
+      setIsTesting(false);
+    }, 1500);
+  };
+
   const handleRunCandidates = () => {
     setIsRunning(true);
     setTimeout(() => {
       setIsRunning(false);
+      setSampleResults(null);
       setScoreFilter("all");
       setExpandedCandidate(null);
       setView("results");
@@ -1640,47 +1655,136 @@ export default function Home() {
                 </div>
               </div> */}
 
-              {/* Prompt Textarea */}
+              {/* Prompt Textarea or Sample Results */}
               <div style={{ flex: 1, padding: "16px 20px", overflow: "auto" }}>
-                <textarea
-                  value={generatedPrompt || generatePrompt(selectedJob.title, criteria)}
-                  onChange={(e) => setGeneratedPrompt(e.target.value)}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    minHeight: "200px",
-                    padding: "14px",
-                    borderRadius: "10px",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    background: "rgba(255,255,255,0.03)",
-                    fontSize: "13px",
-                    fontFamily: "var(--font-mono)",
-                    lineHeight: 1.6,
-                    resize: "none",
-                    color: "var(--text-primary)",
-                    outline: "none",
-                  }}
-                />
+                {sampleResults ? (
+                  // Sample Results Preview
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        Sample Results (5)
+                      </span>
+                      <button
+                        onClick={() => setSampleResults(null)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          fontSize: "12px",
+                          color: "var(--text-tertiary)",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        Edit prompt
+                      </button>
+                    </div>
+                    {sampleResults.map((candidate, i) => (
+                      <div
+                        key={candidate.id}
+                        style={{
+                          padding: "12px 14px",
+                          background: "rgba(255,255,255,0.03)",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                          <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>
+                            {i + 1}. {candidate.name}
+                          </span>
+                          <span style={{
+                            padding: "3px 8px",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                            background: candidate.score >= 90 ? "rgba(34, 197, 94, 0.15)" : candidate.score >= 75 ? "rgba(19, 129, 58, 0.15)" : candidate.score >= 60 ? "rgba(234, 179, 8, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                            color: getScoreColor(candidate.score),
+                          }}>
+                            {candidate.score >= 90 ? "Strong" : candidate.score >= 75 ? "Good" : candidate.score >= 60 ? "Moderate" : "Review"}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: "12px", color: "var(--text-tertiary)", lineHeight: 1.5 }}>
+                          {candidate.reason.substring(0, 80)}...
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Prompt Textarea
+                  <textarea
+                    value={generatedPrompt || generatePrompt(selectedJob.title, criteria)}
+                    onChange={(e) => {
+                      setGeneratedPrompt(e.target.value);
+                      setSampleResults(null); // Reset sample when prompt is edited
+                    }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      minHeight: "200px",
+                      padding: "14px",
+                      borderRadius: "10px",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.03)",
+                      fontSize: "13px",
+                      fontFamily: "var(--font-mono)",
+                      lineHeight: 1.6,
+                      resize: "none",
+                      color: "var(--text-primary)",
+                      outline: "none",
+                    }}
+                  />
+                )}
               </div>
 
-              {/* Run Button */}
+              {/* Action Buttons */}
               <div style={{
                 padding: "16px 20px",
                 borderTop: "1px solid rgba(255,255,255,0.06)",
                 flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
               }}>
+                {!sampleResults ? (
+                  // Test Sample Button
+                  <button
+                    onClick={handleTestSample}
+                    disabled={isTesting}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "10px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "var(--text-primary)",
+                      cursor: isTesting ? "wait" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {isTesting ? <Spinner size={14} /> : null}
+                    {isTesting ? "Testing..." : "Test on 5 candidates"}
+                  </button>
+                ) : null}
+                
+                {/* Run All Button */}
                 <button
                   onClick={handleRunCandidates}
                   disabled={isRunning}
                   style={{
                     width: "100%",
-                    padding: "14px",
+                    padding: "12px",
                     borderRadius: "10px",
-                    background: "var(--accent-primary)",
+                    background: sampleResults ? "var(--accent-primary)" : "rgba(255,255,255,0.08)",
                     border: "none",
                     fontSize: "14px",
                     fontWeight: 500,
-                    color: "white",
+                    color: sampleResults ? "white" : "var(--text-secondary)",
                     cursor: isRunning ? "wait" : "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -1689,8 +1793,8 @@ export default function Home() {
                     transition: "all 0.15s ease",
                   }}
                 >
-                  {isRunning ? <Spinner size={16} /> : null}
-                  {isRunning ? "Analyzing..." : `Run on ${selectedJob.candidateCount} candidates`}
+                  {isRunning ? <Spinner size={14} /> : null}
+                  {isRunning ? "Analyzing..." : `Run on all ${selectedJob.candidateCount}`}
                 </button>
               </div>
             </>
@@ -1821,7 +1925,7 @@ export default function Home() {
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}>
-              Excellent Match (90+)
+              Strong Fit (90+)
             </div>
             <div style={{
               fontSize: "36px",
@@ -1846,7 +1950,7 @@ export default function Home() {
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}>
-              Strong Match (75-89)
+              Good Fit (75-89)
             </div>
             <div style={{
               fontSize: "36px",
@@ -1871,7 +1975,7 @@ export default function Home() {
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}>
-              Potential Match (60-74)
+              Moderate Fit (60-74)
             </div>
             <div style={{
               fontSize: "36px",
@@ -1896,10 +2000,10 @@ export default function Home() {
           }}>
             {[
               { key: "all", label: "All", count: sortedCandidates.length },
-              { key: "excellent", label: "Excellent", count: excellentMatches, color: "var(--accent-success)" },
-              { key: "strong", label: "Strong", count: strongMatches, color: "var(--accent-primary)" },
-              { key: "potential", label: "Potential", count: potentialMatches, color: "var(--accent-warning)" },
-              { key: "weak", label: "Weak", count: sortedCandidates.filter(c => c.score < 60).length, color: "var(--accent-error)" },
+              { key: "excellent", label: "Strong Fit", count: excellentMatches, color: "var(--accent-success)" },
+              { key: "strong", label: "Good Fit", count: strongMatches, color: "var(--accent-primary)" },
+              { key: "potential", label: "Moderate", count: potentialMatches, color: "var(--accent-warning)" },
+              { key: "weak", label: "Review", count: sortedCandidates.filter(c => c.score < 60).length, color: "var(--accent-error)" },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -1946,7 +2050,7 @@ export default function Home() {
                 <thead>
                   <tr style={{ background: "var(--bg-tertiary)" }}>
                     <th style={{ padding: "14px 16px", width: "40px" }}></th>
-                    {["#", "Name", "Role", "Stage", "Location", "Exp", "Score"].map((col) => (
+                    {["#", "Name", "Role", "Stage", "Location", "Exp", "Fit"].map((col) => (
                       <th
                         key={col}
                         style={{
@@ -2031,14 +2135,17 @@ export default function Home() {
                             <td style={{ padding: "14px 16px", color: "var(--text-secondary)" }}>
                               {candidate.experience}
                             </td>
-                            <td style={{
-                              padding: "14px 16px",
-                              textAlign: "right",
-                              fontWeight: 700,
-                              fontSize: "15px",
-                              color: getScoreColor(candidate.score),
-                            }}>
-                              {candidate.score}
+                            <td style={{ padding: "14px 16px", textAlign: "right" }}>
+                              <span style={{
+                                padding: "5px 12px",
+                                borderRadius: "var(--radius-full)",
+                                background: candidate.score >= 90 ? "rgba(34, 197, 94, 0.15)" : candidate.score >= 75 ? "rgba(19, 129, 58, 0.15)" : candidate.score >= 60 ? "rgba(234, 179, 8, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                                color: getScoreColor(candidate.score),
+                                fontSize: "12px",
+                                fontWeight: 500,
+                              }}>
+                                {candidate.score >= 90 ? "Strong" : candidate.score >= 75 ? "Good" : candidate.score >= 60 ? "Moderate" : "Review"}
+                              </span>
                             </td>
                           </tr>
                           {isExpanded && (
@@ -2049,86 +2156,29 @@ export default function Home() {
                                 borderBottom: "1px solid var(--border-subtle)",
                               }}>
                                 <div style={{
-                                  display: "grid",
-                                  gridTemplateColumns: "1fr 1fr",
-                                  gap: "24px",
-                                  padding: "20px",
+                                  padding: "16px 20px",
                                   background: "var(--bg-card)",
                                   borderRadius: "var(--radius-md)",
                                   border: "1px solid var(--border-subtle)",
                                 }}>
-                                  <div>
-                                    <h4 style={{
-                                      fontSize: "12px",
-                                      fontWeight: 600,
-                                      color: "var(--text-secondary)",
-                                      marginBottom: "12px",
-                                      textTransform: "uppercase",
-                                      letterSpacing: "0.5px",
-                                    }}>
-                                      Analysis
-                                    </h4>
-                                    <p style={{
+                                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                                    <span style={{
+                                      padding: "6px 14px",
+                                      borderRadius: "var(--radius-full)",
+                                      background: candidate.score >= 90 ? "rgba(34, 197, 94, 0.15)" : candidate.score >= 75 ? "rgba(19, 129, 58, 0.15)" : candidate.score >= 60 ? "rgba(234, 179, 8, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                                      color: getScoreColor(candidate.score),
                                       fontSize: "13px",
-                                      color: "var(--text-primary)",
-                                      lineHeight: 1.7,
-                                    }}>
-                                      {candidate.reason}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <h4 style={{
-                                      fontSize: "12px",
                                       fontWeight: 600,
-                                      color: "var(--text-secondary)",
-                                      marginBottom: "12px",
-                                      textTransform: "uppercase",
-                                      letterSpacing: "0.5px",
                                     }}>
-                                      Details
-                                    </h4>
-                                    <div style={{
-                                      display: "grid",
-                                      gridTemplateColumns: "1fr 1fr",
-                                      gap: "12px",
-                                    }}>
-                                      <div>
-                                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Skills</span>
-                                        <p style={{ fontSize: "13px", color: "var(--text-primary)", marginTop: "2px" }}>
-                                          {candidate.skills}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Leadership</span>
-                                        <p style={{ fontSize: "13px", color: "var(--text-primary)", marginTop: "2px" }}>
-                                          {candidate.leadership}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Background</span>
-                                        <p style={{ fontSize: "13px", color: "var(--text-primary)", marginTop: "2px" }}>
-                                          {candidate.background}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Score Breakdown</span>
-                                        <div style={{
-                                          marginTop: "6px",
-                                          height: "8px",
-                                          background: "var(--bg-tertiary)",
-                                          borderRadius: "var(--radius-full)",
-                                          overflow: "hidden",
-                                        }}>
-                                          <div style={{
-                                            height: "100%",
-                                            width: `${candidate.score}%`,
-                                            background: `linear-gradient(90deg, ${getScoreColor(candidate.score)}, ${getScoreColor(candidate.score)}80)`,
-                                            borderRadius: "var(--radius-full)",
-                                          }} />
-                                        </div>
-                                      </div>
-                                    </div>
+                                      {candidate.score >= 90 ? "Strong Fit" : candidate.score >= 75 ? "Good Fit" : candidate.score >= 60 ? "Moderate Fit" : "Needs Review"}
+                                    </span>
+                                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+                                      Score: {candidate.score}/100
+                                    </span>
                                   </div>
+                                  <p style={{ fontSize: "14px", color: "var(--text-primary)", lineHeight: 1.7 }}>
+                                    {candidate.reason}
+                                  </p>
                                 </div>
                               </td>
                             </tr>
